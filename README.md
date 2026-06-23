@@ -52,12 +52,18 @@ torch==1.10.0
 推荐创建独立环境：
 
 ```bash
-conda create -n dhpa python=3.8 -y
-conda activate dhpa
-pip install -r requirements.txt
+conda create -n sinpa38 python=3.8 -y
+conda activate sinpa38
 ```
 
-如果服务器 CUDA 版本与 `torch==1.10.0` 默认安装包不匹配，建议先根据服务器 CUDA 版本安装对应的 PyTorch，再安装其余依赖。
+安装依赖：
+```bash
+pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 \
+  --extra-index-url https://download.pytorch.org/whl/cu113 \
+  -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+pip install -r requirements.txt
+```
 
 ## 3. 数据准备
 
@@ -164,35 +170,8 @@ python experiments/DeepPA/main.py \
 | `--wandb` | `True` | 是否启用 Weights & Biases 记录；无账号或不需要记录时设置为 `False` |
 | `--save_preds` | `False` | 是否保存训练集、验证集、测试集预测结果 |
 
-## 8. 输出文件
 
-训练与测试结果会保存在 `logs` 目录下，路径格式大致为：
-
-```text
-logs/SINPA/DeepPA/<参数组合>/
-```
-
-常见输出文件包括：
-
-```text
-info_0.log          # 训练日志
-final_model_0.pt    # 验证集最优模型参数
-val_loss_0.txt      # 最优验证损失
-results_0.csv       # 测试集各预测步 MAE、RMSE
-```
-
-如果设置 `--save_preds True`，还会额外保存：
-
-```text
-train_preds.npy
-train_labels.npy
-val_preds.npy
-val_labels.npy
-test_preds.npy
-test_labels.npy
-```
-
-## 9. 指标说明
+## 8. 指标说明
 
 项目主要使用以下指标评价预测效果：
 
@@ -201,47 +180,8 @@ test_labels.npy
 
 代码会分别输出所有预测步的平均结果，以及每个预测步上的 MAE、RMSE。当 `horizon=12` 时，还会进一步输出 0-1h、1-2h、2-3h 三个预测区间的评价结果。
 
-## 10. 常见问题
 
-### 10.1 找不到 `train.npz`、`val.npz` 或 `test.npz`
-
-请检查是否已经将数据文件放在项目根目录下的 `data/SINPA/` 中。正确路径应为：
-
-```text
-./data/SINPA/train.npz
-./data/SINPA/val.npz
-./data/SINPA/test.npz
-```
-
-### 10.2 运行时找不到 CUDA 或 GPU 编号不正确
-
-请先检查服务器是否支持 CUDA：
-
-```bash
-python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.device_count())"
-```
-
-如果只有一张 GPU，通常设置：
-
-```bash
---gpu 0
-```
-
-如果不使用 GPU，代码会自动回退到 CPU，但在 SINPA 这类大规模节点数据上运行速度会明显变慢。
-
-### 10.3 使用 `wandb` 报错
-
-如果没有配置 Weights & Biases 账号，建议在运行命令中加入：
-
-```bash
---wandb False
-```
-
-### 10.4 测试阶段找不到模型文件
-
-测试时会从当前参数组合对应的 `logs` 子目录中读取 `final_model_0.pt`。如果测试参数与训练参数不一致，可能会生成不同目录，导致找不到模型文件。请保持训练与测试命令的关键参数一致。
-
-## 11. 备注
+## 9. 备注
 
 本仓库当前版本主要用于模型训练与实验复现。由于完整数据文件体积较大，提交版本中删除了以下文件：
 
